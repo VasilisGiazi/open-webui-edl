@@ -1,0 +1,23 @@
+services:
+
+  # ─── Your existing Docling service ───────────────────────────────────────────
+  docling:
+    image: quay.io/docling-project/docling-serve:latest
+    # (no ports exposed externally – only reachable from this compose network)
+    environment:
+      - DOCLING_SERVE_ENABLE_UI=false
+    restart: unless-stopped
+
+  # ─── Docling Image Loader (this service) ─────────────────────────────────────
+  docling-image-loader:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      # Override the Docling URL to use the compose service name
+      - DOCLING_URL=http://docling:5001
+    depends_on:
+      - docling
+    restart: unless-stopped
