@@ -24,16 +24,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Determine tag
-        id: tag
+        id: meta
         run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "tag=latest" >> "$GITHUB_OUTPUT"
+            echo "tag=ghcr.io/${OWNER}/open-webui-edl:latest" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "tag=ghcr.io/${OWNER}/open-webui-edl:${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/open-webui-edl:${{ steps.tag.outputs.tag }}
+          tags: ${{ steps.meta.outputs.tag }}
