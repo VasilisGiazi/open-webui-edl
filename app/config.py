@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     # Docling request timeout in seconds. 0 = no timeout (matches Open-WebUI default).
     docling_timeout: int = 0
 
+    # Comma-separated file extensions to skip Docling processing (returned as-is).
+    # e.g. ".txt,.html,.htm"
+    skip_extensions: str = ".txt,.html,.htm"
+
     # ── Azure Blob Storage ────────────────────────────────────────────────────
     # Option A – connection string (simplest)
     azure_storage_connection_string: str = ""

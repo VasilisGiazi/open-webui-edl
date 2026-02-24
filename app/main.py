@@ -54,6 +54,17 @@ async def process_document(
 
     log.info("Processing '%s' (%s, %d bytes)", filename, mime_type, len(file_bytes))
 
+    # ── Skip processing for plain text and HTML files ─────────────────────────
+    ext = os.path.splitext(filename)[1].lower()
+    skip_exts = {e.strip().lower() for e in settings.skip_extensions.split(",") if e.strip()}
+    if ext in skip_exts:
+        log.info("Skipping Docling processing for %s file: '%s'", ext, filename)
+        page_content = file_bytes.decode("utf-8", errors="replace")
+        metadata: dict = {"source": filename}
+        if mime_type:
+            metadata["Content-Type"] = mime_type
+        return JSONResponse(content={"page_content": page_content, "metadata": metadata})
+
     # ── Call Docling (embedded images) ────────────────────────────────────────
     try:
         raw_markdown = await fetch_markdown_with_images(
