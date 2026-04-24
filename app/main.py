@@ -7,14 +7,16 @@ PUT /process  →  { page_content: str, metadata: dict }
 
 import logging
 import os
+from pathlib import Path
 from urllib.parse import unquote
 
 from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.docling_client import fetch_markdown_with_images
-from app.image_processor import replace_images_with_blob_urls
+from app.image_processor import replace_images_with_urls
 from app.text_processor import processor as text_processor
 
 logging.basicConfig(level=logging.INFO)
@@ -22,9 +24,20 @@ log = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Docling Image Loader",
-    description="Open-WebUI external document loader that extracts images to Azure Blob Storage",
-    version="1.0.0",
+    description="Open-WebUI external document loader that extracts images to Azure Blob Storage and/or a local directory",
+    version="1.1.0",
 )
+
+# Serve locally-stored images at /images/<filename> when the local backend is
+# enabled. The same path is what `LOCAL_STORAGE_URL_PREFIX` should point at
+# (e.g. http://docling-image-loader:8080/images).
+if settings.storage_backend.lower().strip() in ("local", "both"):
+    _local_dir = Path(settings.local_storage_path)
+    _local_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/images", StaticFiles(directory=str(_local_dir)), name="images")
+    log.info(
+        "Local image storage enabled: serving %s at /images", _local_dir.resolve()
+    )
 
 
 @app.get("/health")
@@ -82,7 +95,7 @@ async def process_document(
 
     # ── Extract base64 images → Azure Blob URLs ───────────────────────────────
     try:
-        clean_markdown, image_count = await replace_images_with_blob_urls(raw_markdown)
+        clean_markdown, image_count = await replace_images_with_urls(raw_markdown)
     except Exception as exc:
         log.error("Image processing error: %s", exc)
         raise HTTPException(status_code=500, detail=f"Image processing error: {exc}")

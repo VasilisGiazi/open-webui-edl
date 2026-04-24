@@ -18,6 +18,11 @@ services:
     environment:
       # Override the Docling URL to use the compose service name
       - DOCLING_URL=http://docling:5001
+    volumes:
+      # Persists images written by the "local" / "both" storage backend.
+      # The container path must match LOCAL_STORAGE_PATH in your .env.
+      # Safe to leave mounted even if STORAGE_BACKEND=azure (it stays empty).
+      - ./images:/data/images
     depends_on:
       - docling
     restart: unless-stopped

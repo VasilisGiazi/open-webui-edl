@@ -1,8 +1,8 @@
 # Docling Image Loader — Open-WebUI External Document Loader
 
 > Extends Docling's markdown output by extracting embedded images,
-> uploading them to **Azure Blob Storage**, and replacing inline base64
-> data-URIs with permanent public URLs.
+> persisting them to **Azure Blob Storage**, a **local filesystem path**,
+> or both, and replacing inline base64 data-URIs with permanent URLs.
 
 ---
 
@@ -30,9 +30,66 @@ Open-WebUI  ──PUT /process──►  docling-image-loader  ──POST /v1/co
 
 ---
 
+## Storage backends
+
+Choose where extracted images are persisted via the `STORAGE_BACKEND` env var:
+
+| `STORAGE_BACKEND` | Where images go | URL embedded in the markdown |
+|-------------------|-----------------|------------------------------|
+| `azure` *(default)* | Azure Blob Storage | `https://<account>.blob.core.windows.net/<container>/<sha>.png` |
+| `local` | Local directory on the loader server | `<LOCAL_STORAGE_URL_PREFIX>/<sha>.png` |
+| `both` | Both — written to local *and* uploaded to Azure | Azure URL (more durable) |
+
+The local backend is useful when:
+- You can't (or don't want to) use Azure Blob Storage.
+- You're running fully on-prem / air-gapped.
+- You want a local cache alongside the Azure copy (`both`).
+
+When the local backend is enabled, this service automatically serves the
+saved files at `GET /images/<filename>` via FastAPI `StaticFiles` — no extra
+web server is needed. Set `LOCAL_STORAGE_URL_PREFIX` to the URL Open-WebUI
+will use to reach that endpoint.
+
+### Local storage — Docker
+
+Add a volume mapping (already present in `docker-compose.yml`) so the files
+survive container restarts:
+
+```yaml
+volumes:
+  - ./images:/data/images
+```
+
+In `.env`:
+
+```
+STORAGE_BACKEND=local        # or "both"
+LOCAL_STORAGE_PATH=/data/images
+LOCAL_STORAGE_URL_PREFIX=http://docling-image-loader:8080/images
+```
+
+`LOCAL_STORAGE_URL_PREFIX` must be reachable from the Open-WebUI container.
+Inside the same compose network, use the service name
+(`http://docling-image-loader:8080/images`). If Open-WebUI runs elsewhere,
+use the host the loader is exposed on (e.g. `http://my-host:8080/images` or
+a public URL behind a reverse proxy).
+
+### Local storage — running as a plain service (no Docker)
+
+```
+STORAGE_BACKEND=local
+LOCAL_STORAGE_PATH=./images                   # any writable absolute or relative path
+LOCAL_STORAGE_URL_PREFIX=http://localhost:8080/images
+```
+
+Then start with `uvicorn app.main:app --host 0.0.0.0 --port 8080`. The
+directory is created on startup if it doesn't exist.
+
+---
+
 ## Quick Start
 
-### 1 — Azure Blob Storage
+### 1 — Azure Blob Storage *(skip this section if `STORAGE_BACKEND=local`)*
 
 1. Create a **Storage Account** in the Azure portal.
 2. Create a **Container** (e.g. `docling-images`).
@@ -95,12 +152,16 @@ Every image is named by its **SHA-256 hash** (e.g. `a3f9...d1.png`).
 | `DOCLING_API_KEY` | | `""` | Docling auth (if any) |
 | `DOCLING_EXTRA_PARAMS` | | `""` | JSON string of extra Docling params |
 | `DOCLING_TIMEOUT` | | `0` | Request timeout in seconds; `0` = no timeout |
-| `AZURE_STORAGE_CONNECTION_STRING` | ✓* | — | Full connection string |
-| `AZURE_STORAGE_ACCOUNT_NAME` | ✓* | — | Account name (Option B) |
-| `AZURE_STORAGE_ACCOUNT_KEY` | ✓* | — | Account key (Option B) |
-| `AZURE_STORAGE_CONTAINER` | ✓ | `docling-images` | Target container (must allow public blob access) |
+| `STORAGE_BACKEND` | | `azure` | One of: `azure`, `local`, `both` |
+| `AZURE_STORAGE_CONNECTION_STRING` | ✓*¹ | — | Full connection string |
+| `AZURE_STORAGE_ACCOUNT_NAME` | ✓*¹ | — | Account name (Option B) |
+| `AZURE_STORAGE_ACCOUNT_KEY` | ✓*¹ | — | Account key (Option B) |
+| `AZURE_STORAGE_CONTAINER` | ✓¹ | `docling-images` | Target container (must allow public blob access) |
+| `LOCAL_STORAGE_PATH` | ✓² | `/data/images` | Filesystem path where images are written |
+| `LOCAL_STORAGE_URL_PREFIX` | ✓² | — | URL prefix Open-WebUI uses to fetch images (e.g. `http://docling-image-loader:8080/images`) |
 
-*One of: connection string **or** (account name + key).
+¹ Required when `STORAGE_BACKEND` is `azure` or `both`. One of: connection string **or** (account name + key).
+² Required when `STORAGE_BACKEND` is `local` or `both`.
 
 ---
 
