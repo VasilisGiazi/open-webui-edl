@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # ── This service ──────────────────────────────────────────────────────────
     api_key: str = ""  # Bearer token expected from Open-WebUI
     host: str = "0.0.0.0"
-    port: int = 8080
+    port: int = 8081
 
     # ── Docling ───────────────────────────────────────────────────────────────
     docling_url: str = "http://docling:5001"
@@ -51,8 +51,8 @@ class Settings(BaseSettings):
 
     # Full URL prefix embedded in the returned markdown. The image filename
     # (<sha>.<ext>) is appended. Examples:
-    #   http://docling-image-loader:8080/images   (inside the compose network)
-    #   http://localhost:8080/images              (running as a local service)
+    #   http://docling-image-loader:8081/images   (inside the compose network)
+    #   http://localhost:8081/images              (running as a local service)
     #   https://docs.example.com/images           (behind a reverse proxy)
     # Required when storage_backend is "local"; ignored otherwise.
     local_storage_url_prefix: str = ""

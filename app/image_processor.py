@@ -139,7 +139,7 @@ def _local_url_prefix() -> str:
         raise RuntimeError(
             "LOCAL_STORAGE_URL_PREFIX is required when STORAGE_BACKEND includes 'local'. "
             "Set it to the externally reachable URL prefix that Open-WebUI will use, "
-            "e.g. http://docling-image-loader:8080/images"
+            "e.g. http://docling-image-loader:8081/images"
         )
     return prefix.rstrip("/")
 

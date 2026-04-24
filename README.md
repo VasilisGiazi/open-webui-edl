@@ -65,13 +65,13 @@ In `.env`:
 ```
 STORAGE_BACKEND=local        # or "both"
 LOCAL_STORAGE_PATH=/data/images
-LOCAL_STORAGE_URL_PREFIX=http://docling-image-loader:8080/images
+LOCAL_STORAGE_URL_PREFIX=http://docling-image-loader:8081/images
 ```
 
 `LOCAL_STORAGE_URL_PREFIX` must be reachable from the Open-WebUI container.
 Inside the same compose network, use the service name
-(`http://docling-image-loader:8080/images`). If Open-WebUI runs elsewhere,
-use the host the loader is exposed on (e.g. `http://my-host:8080/images` or
+(`http://docling-image-loader:8081/images`). If Open-WebUI runs elsewhere,
+use the host the loader is exposed on (e.g. `http://my-host:8081/images` or
 a public URL behind a reverse proxy).
 
 ### Local storage — running as a plain service (no Docker)
@@ -79,10 +79,10 @@ a public URL behind a reverse proxy).
 ```
 STORAGE_BACKEND=local
 LOCAL_STORAGE_PATH=./images                   # any writable absolute or relative path
-LOCAL_STORAGE_URL_PREFIX=http://localhost:8080/images
+LOCAL_STORAGE_URL_PREFIX=http://localhost:8081/images
 ```
 
-Then start with `uvicorn app.main:app --host 0.0.0.0 --port 8080`. The
+Then start with `uvicorn app.main:app --host 0.0.0.0 --port 8081`. The
 directory is created on startup if it doesn't exist.
 
 ---
@@ -121,7 +121,7 @@ In Open-WebUI:
 | Setting | Value |
 |---------|-------|
 | Documents → Content Extraction Engine | **External** |
-| External Document Loader URL | `http://docling-image-loader:8080` (or your host) |
+| External Document Loader URL | `http://docling-image-loader:8081` (or your host) |
 | External Document Loader API Key | Same value as `API_KEY` in `.env` |
 
 ---
@@ -158,7 +158,7 @@ Every image is named by its **SHA-256 hash** (e.g. `a3f9...d1.png`).
 | `AZURE_STORAGE_ACCOUNT_KEY` | ✓*¹ | — | Account key (Option B) |
 | `AZURE_STORAGE_CONTAINER` | ✓¹ | `docling-images` | Target container (must allow public blob access) |
 | `LOCAL_STORAGE_PATH` | ✓² | `/data/images` | Filesystem path where images are written |
-| `LOCAL_STORAGE_URL_PREFIX` | ✓² | — | URL prefix Open-WebUI uses to fetch images (e.g. `http://docling-image-loader:8080/images`) |
+| `LOCAL_STORAGE_URL_PREFIX` | ✓² | — | URL prefix Open-WebUI uses to fetch images (e.g. `http://docling-image-loader:8081/images`) |
 
 ¹ Required when `STORAGE_BACKEND` is `azure` or `both`. One of: connection string **or** (account name + key).
 ² Required when `STORAGE_BACKEND` is `local` or `both`.
@@ -179,5 +179,5 @@ GET /health  →  { "status": "ok" }
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # and fill in values
-uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
 ```

@@ -30,7 +30,7 @@ app = FastAPI(
 
 # Serve locally-stored images at /images/<filename> when the local backend is
 # enabled. The same path is what `LOCAL_STORAGE_URL_PREFIX` should point at
-# (e.g. http://docling-image-loader:8080/images).
+# (e.g. http://docling-image-loader:8081/images).
 if settings.storage_backend.lower().strip() in ("local", "both"):
     _local_dir = Path(settings.local_storage_path)
     _local_dir.mkdir(parents=True, exist_ok=True)
